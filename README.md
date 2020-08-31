@@ -14,4 +14,7 @@ snapshotalyzer uses the configuration file created by the AWS clie. e.g.
 
 ## Running
 
-'pipenv run python snapshotalyzer\snapshotalyzer.py'
+'pipenv run python snapshotalyzer\snapshotalyzer.py <command> <--project=PROJECT>'
+
+*command*: list, start, stop
+*project* is optional
