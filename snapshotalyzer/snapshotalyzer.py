@@ -6,6 +6,7 @@ session = boto3.Session(profile_name='snapshotalyzer')
 ec2 = session.resource('ec2')
 
 def filter_instances(project):
+    """Return filtered list of instances if argument is passed"""
     instances = []
 
     if project:
@@ -19,12 +20,14 @@ def filter_instances(project):
 def has_pending_snapshot(volume):
     """Check if any pending snapshots for given volume"""
     snapshots = list(volume.snapshots.all())
+
     return snapshots and snapshots[0].state == 'pending'
 
 @click.group()
 def cli():
     """snapshotalyzer manages snapshots"""
 
+# SNAPSHOTS GROUP
 @cli.group('snapshots')
 def snapshots():
     """Commands for snapshots"""
@@ -54,7 +57,7 @@ def list_snapshots(project, list_all):
                 if s.state == 'completed' and not list_all: break
     return
 
-
+# VOLUMES GROUP
 @cli.group('volumes')
 def volumes():
     """Commands for volumes"""
@@ -76,10 +79,12 @@ def list_volumes(project):
                 v.encrypted and "Encrypted" or "Not Encrypted")))
     return
 
+# INCSTANCES GROUP
 @cli.group('instances')
 def instances():
     """Commands for inctances"""
 
+# instances - snapshot
 @instances.command('snapshot', help='Create snapshots of all volumes')
 @click.option('--project', default=None,
     help="Only instances for project (tag Project:<name>)")
@@ -110,6 +115,7 @@ def create_snapshots(project):
 
     return
 
+# instances - list
 @instances.command('list')
 @click.option('--project', default=None,
     help="Only instances for project (tag Project:<name>)")
@@ -129,6 +135,7 @@ def list_instances(project):
             tags.get('Project', '<no project>'))))
     return
 
+# instances - stop
 @instances.command('stop')
 @click.option('--project', default=None, help='Only instances for project')
 def stop_instances(project):
@@ -146,6 +153,7 @@ def stop_instances(project):
 
     return
 
+# instances - start
 @instances.command('start')
 @click.option('--project', default=None, help='Only instances for project')
 def start_instances(project):
@@ -163,6 +171,21 @@ def start_instances(project):
 
     return
 
+# instancs - reboot
+@instances.command('reboot')
+@click.option('--project', default=None, help='Only instances for project')
+def reboot_instances(project):
+    """Reboot EC2 instances"""
+
+    instances = filter_instances(project)
+
+    for i in instances:
+        print("Rebooting {0}...".format(i.id))
+        try:
+            i.reboot()
+        except botocore.exceptions.ClientError as e:
+            print("Could not reboot {0}. ".format(i.id) + str(e))
+            continue
 
 if __name__ == '__main__':
     cli()
