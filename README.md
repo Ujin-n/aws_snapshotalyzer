@@ -14,8 +14,10 @@ snapshotalyzer uses the configuration file created by the AWS cli. e.g.
 
 ## Running
 
-'pipenv run python snapshotalyzer\snapshotalyzer.py <command> <subcommand> <--project=PROJECT>'
+'pipenv run python snapshotalyzer\snapshotalyzer.py <command> <subcommand> <--project=PROJECT> <--instance=INSTANCE> <--force>'
 
-*command*: instances, volumes, snapshots
-*subcommand*: depends on command
-*project* is optional
+*command*: instances, volumes, snapshots;
+*subcommand*: depends on command;
+*project*: specifies tag:Project. Is optional;
+*instance*: specifies instance id. Is optional;
+*force*: force a command without *project* attribute.

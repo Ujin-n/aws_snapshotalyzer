@@ -3,12 +3,17 @@ import botocore
 import click
 
 
-def filter_instances(project):
+def filter_instances(project, instance=None):
     """Return filtered list of instances if argument is passed"""
     instances = []
+    filters = []
 
     if project:
-        filters = [{'Name':'tag:Project', 'Values':[project]}]
+        filters.append({'Name':'tag:Project', 'Values':[project]})
+    if instance:
+        filters.append({'Name':'instance-id', 'Values':[instance]})
+
+    if project or instance:
         instances = ec2.instances.filter(Filters=filters)
     else:
         instances = ec2.instances.all()
@@ -44,10 +49,12 @@ def snapshots():
     help="Only snapshots for project (tag Project:<name>)")
 @click.option('--all', 'list_all', default=False, is_flag=True,
     help='List all snapshots for each volume, not just the most recent')
-def list_snapshots(project, list_all):
+@click.option('--instance', default=None,
+    help='If set apply command only for specified instance')
+def list_snapshots(project, list_all, instance):
     """List EC2 snapshots"""
 
-    instances = filter_instances(project)
+    instances = filter_instances(project, instance)
 
     for i in instances:
         for v in i.volumes.all():
@@ -74,10 +81,12 @@ def volumes():
 @volumes.command('list')
 @click.option('--project', default=None,
     help="Only volumes for project (tag Project:<name>)")
-def list_volumes(project):
+@click.option('--instance', default=None,
+    help='If set apply command only for specified instance')
+def list_volumes(project, instance):
     """List EC2 volumes"""
 
-    instances = filter_instances(project)
+    instances = filter_instances(project, instance)
 
     for i in instances:
         for v in i.volumes.all():
@@ -101,14 +110,16 @@ def instances():
     help="Only instances for project (tag Project:<name>)")
 @click.option('--force', 'force_snapshot', default=False, is_flag=True,
     help="If '--project' isn't set, exit the command immediately with an error message, unless '--force' is set" )
-def create_snapshots(project, force_snapshot):
+@click.option('--instance', default=None,
+    help='If set apply command only for specified instance')
+def create_snapshots(project, force_snapshot, instance):
     """Create snapshots for EC2 instances"""
 
     if not project and not force_snapshot:
         print('"--force" option is required if the project is not specified!')
         exit()
 
-    instances = filter_instances(project)
+    instances = filter_instances(project, instance)
 
     for i in instances:
         print("Stopping {0}...".format(i.id))
@@ -160,15 +171,18 @@ def list_instances(project):
 @instances.command('stop')
 @click.option('--project', default=None, help='Only instances for project')
 @click.option('--force', 'force_stop', default=False, is_flag=True,
-    help="If '--project' isn't set, exit the command immediately with an error message, unless '--force' is set" )
-def stop_instances(project, force_stop):
+    help="If '--project' isn't set, exit the command immediately with \
+        an error message, unless '--force' is set" )
+@click.option('--instance', default=None,
+    help='If set apply command only for specified instance')
+def stop_instances(project, force_stop, instance):
     """Stop EC2 instances"""
 
     if not project and not force_stop:
         print('"--force" option is required if the project is not specified!')
         exit()
 
-    instances = filter_instances(project)
+    instances = filter_instances(project, instance)
 
     for i in instances:
         print("Stopping {0}...".format(i.id))
@@ -184,15 +198,18 @@ def stop_instances(project, force_stop):
 @instances.command('start')
 @click.option('--project', default=None, help='Only instances for project')
 @click.option('--force', 'force_start', default=False, is_flag=True,
-    help="If '--project' isn't set, exit the command immediately with an error message, unless '--force' is set" )
-def start_instances(project, force_start):
+    help="If '--project' isn't set, exit the command immediately \
+        with an error message, unless '--force' is set" )
+@click.option('--instance', default=None,
+    help='If set apply command only for specified instance')
+def start_instances(project, force_start, instance):
     """Start EC2 instances"""
 
     if not project and not force_start:
         print('"--force" option is required if the project is not specified!')
         exit()
 
-    instances = filter_instances(project)
+    instances = filter_instances(project, instance)
 
     for i in instances:
         print("Starting {0}...".format(i.id))
@@ -204,19 +221,22 @@ def start_instances(project, force_start):
 
     return
 
-# instancs - reboot
+# instances- reboot
 @instances.command('reboot')
 @click.option('--project', default=None, help='Only instances for project')
 @click.option('--force', 'force_reboot', default=False, is_flag=True,
-    help="If '--project' isn't set, exit the command immediately with an error message, unless '--force' is set" )
-def reboot_instances(project, force_reboot):
+    help="If '--project' isn't set, exit the command immediately  \
+        with an error message, unless '--force' is set" )
+@click.option('--instance', default=None,
+    help='If set apply command only for specified instance')
+def reboot_instances(project, force_reboot, instance):
     """Reboot EC2 instances"""
 
     if not project and not force_reboot:
         print('"--force" option is required if the project is not specified!')
         exit()
 
-    instances = filter_instances(project)
+    instances = filter_instances(project, instance)
 
     for i in instances:
         print("Rebooting {0}...".format(i.id))
