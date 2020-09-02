@@ -2,6 +2,7 @@ import boto3
 import botocore
 import click
 
+
 def filter_instances(project):
     """Return filtered list of instances if argument is passed"""
     instances = []
@@ -14,12 +15,15 @@ def filter_instances(project):
 
     return instances
 
+
 def has_pending_snapshot(volume):
     """Check if any pending snapshots for given volume"""
     snapshots = list(volume.snapshots.all())
 
     return snapshots and snapshots[0].state == 'pending'
 
+
+# CLI GROUP (MAIN)
 @click.group()
 @click.option('--profile', default=None, help="AWS user")
 def cli(profile):
@@ -28,6 +32,7 @@ def cli(profile):
 
     session = boto3.Session(profile_name=profile)
     ec2 = session.resource('ec2')
+
 
 # SNAPSHOTS GROUP
 @cli.group('snapshots')
@@ -59,10 +64,13 @@ def list_snapshots(project, list_all):
                 if s.state == 'completed' and not list_all: break
     return
 
+
 # VOLUMES GROUP
 @cli.group('volumes')
 def volumes():
     """Commands for volumes"""
+
+# list command
 @volumes.command('list')
 @click.option('--project', default=None,
     help="Only volumes for project (tag Project:<name>)")
@@ -80,6 +88,7 @@ def list_volumes(project):
                 str(v.size) + "GiB",
                 v.encrypted and "Encrypted" or "Not Encrypted")))
     return
+
 
 # INCSTANCES GROUP
 @cli.group('instances')
@@ -104,7 +113,6 @@ def create_snapshots(project, force_snapshot):
     for i in instances:
         print("Stopping {0}...".format(i.id))
         i.stop()
-
         i.wait_until_stopped()
 
         for v in i.volumes.all():
@@ -113,7 +121,11 @@ def create_snapshots(project, force_snapshot):
                 continue
 
             print("Creating snapshot of {0}".format(v.id))
-            v.create_snapshot(Description='Created by snapshotalyzer')
+            try:
+                v.create_snapshot(Description='Created by snapshotalyzer')
+            except botocore.exceptions.ClientError as e:
+                print(f"Could not create a snapshot for instance {i.id} volume {v.id}. {str(e)}")
+                continue
 
         print("Starting {0}...".format(i.id))
         i.start()
@@ -213,6 +225,7 @@ def reboot_instances(project, force_reboot):
         except botocore.exceptions.ClientError as e:
             print("Could not reboot {0}. ".format(i.id) + str(e))
             continue
+
 
 if __name__ == '__main__':
     cli()
