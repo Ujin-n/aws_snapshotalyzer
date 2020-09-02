@@ -122,6 +122,9 @@ def create_snapshots(project, force_snapshot, instance):
     instances = filter_instances(project, instance)
 
     for i in instances:
+        flag = None
+        if i.state['Name'] == 'running': flag = True
+
         print("Stopping {0}...".format(i.id))
         i.stop()
         i.wait_until_stopped()
@@ -137,10 +140,10 @@ def create_snapshots(project, force_snapshot, instance):
             except botocore.exceptions.ClientError as e:
                 print(f"Could not create a snapshot for instance {i.id} volume {v.id}. {str(e)}")
                 continue
-
-        print("Starting {0}...".format(i.id))
-        i.start()
-        i.wait_until_running()
+        if flag:
+            print("Starting {0}...".format(i.id))
+            i.start()
+            i.wait_until_running()
 
     print("Job's done!")
 
